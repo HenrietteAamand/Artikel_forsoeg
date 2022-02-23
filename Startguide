@@ -1,0 +1,35 @@
+Startguide til scriptet:
+Mapper:
+  Datamappen: Datamappen indeholder flere ting:
+      1) Testdata: Alt data fra forsøget er placeret her. Mapperne med navnet 'Testperson_X' indeholder data fra HRM_pro, Forerunner og Empatica. 
+          Mapperne mednavnet 'Testperson X' indeholder det data, der er samlet op med MAXREFDES. Der er både raaObserationer, som er alt det data der er samlet op med en frekvens på 25 Hz. 
+          Herudover er der også Interviewet og de HR data der er sendt til MAX/msp med en frekvens på 2 Hz
+      2) Andre filer: Datamappen indeholder også flere filer, der bruges til at sortere data, indlæse data, beregne RR på de korekte faser og data m.v.. Hver fil er forklaret nedenfor:
+          2.1) data_heartrate.csv: Indeholder alle de RR værdier og HR værdier der er udtrukket fra alle 4 sensorer
+          2.2) data_accelerometer.csv: Indeholder accelerometerdata fra både empatica og MAXREFDES. Er gemt i sin egen fil, fordi der er for meget data, til at det kunne gemmes på samme måde som heartrate data. 
+          2.3) Results: Indeholder resultaterne, der bruges til statistiske beregninger til forsøget. 
+          2.4) RR_forskydning: Denne fil indeholder den manuelle tidsforskydning der er fundet mellem HRM-Pro og Empatica relativt til MAXREFDES103 når vi ser på RR-serien. 
+          2.5) RR_raa.csv: Filen angiver hvilke testpersoner+faser der har haft en kontinuert RR-serie afhængigt af sensor. Bruges under beregning af HRV
+          2.6) sensorcount.csv: Angiver sammenhængen mellem sensorcount [milisekunder] og epoch Unix timestamp [milisekunder] for SimulANT+ data, så Forerunner og HRM-Pro klan tidsallignes med MAXREFDES103
+          2.7) testperson_fase_intervention: Filen indeholder en lang liste, der viser hvilken fase og intervention der hænger sammen for hvilken testperson. 
+
+  Figurer mappen: Figurmappen indeholder også flere mapper:
+      1) RR: Indeholder 2 mapper med hhv RR-værdier med og uden tidsforskydning
+      2) HR: Indeholder flere mapper:
+          2.1) dispertion: tom
+          2.2) Figurer med stressperioden: Heartrate, hvor stresperioen indgår
+          2.3) gmm: indeholder resultatet for de 8 acceptable testpersoner
+          2.4) Histogrammer: Indeholder den gaussiske fordeling for alle dataset, hvor resultatet af gmm ses direkte plottet sammen med histogrammerne
+      3) hrv: Indeholder de sparsomme resultater der er fundet nder hrv beregningerne. Der er kun testet med 2 af de 3 mulige PSD metoder, herunder p welch (ff) og Lomb-scargle (lomb)
+
+Scriptfiler:  
+  1) Extract_classes: Der er 4 extract klasser der hver i sær sørger for at udtrække data korrekt fra de forskellige log filer fra alle 4 sensorer
+  2) Calculate_RR: Bruges af Garin sensorerne (HRM-Pro og Forerunner) til at beregne RR-værdier ud fra data i logfilen. 
+  3) Filereader: Står for (stort set) alt kommunikation med datafiler, og har dermed funktioner der kan både gemme og hente data. 
+  4) hrv.py: Beregner HRV
+  5) main: Main sørger for det korrekte forløb, og er ogsaå her, der er en metode der kan indlæse data på ny hvis dette kræves. 
+  6) plotter: Kan plotte de forskellige ting herunder samtlige HR data fra alle sensorer, RR-værdier fra alle sensorer og Hr-værdier fra HRMpro med indtegnede hastigheder m.v. Herfra gemmes de forskellige  plots også
+
+Programmeringsmæssige svagheder ved scriptet:
+1) Der er ikke brugt nogle saom helst try/catch'es og derfor crasher programmet, hvis ikke man ør som man skal
+2) Koblingen er relativt høj. Der burde laves en rafactoring, men dette er ikke nået endnu. 
