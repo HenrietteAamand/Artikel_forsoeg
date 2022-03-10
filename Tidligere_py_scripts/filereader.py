@@ -4,14 +4,6 @@ class filereader_class:
     def __init__(self, path, filename = "") -> None:
         self.path = path
         self.filename = filename
-
-    def read_data(self, filename: str):
-        full_path = self.path + filename + ".csv"
-        file =  open(full_path, mode='r', newline='')
-        lines_from_logfile = list(csv.reader(file)) 
-        file.close()
-        return lines_from_logfile
-
         
     def read_HRMpro(self, testpersonnummer: int):
         """Metoden læser data fra den logfil, der genereres når man bruger SimulANT+ til at læse data der sendes fra en Garmin(R) ANT+ sensor. 
