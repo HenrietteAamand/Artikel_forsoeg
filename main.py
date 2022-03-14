@@ -1,13 +1,18 @@
 
+from pandas import test
 from filereader import *
 from sort_data import *
+from process_results import *
+from plotter import *
 
 #fr = filereader_class( "C:/Users/hah/Documents/Artikel_forsoeg/Data/")
 fr = filereader_class("C:/Users/Bruger/Documents/GitHub/Praktik/Artikel_forsoeg/Data/")
 sd = sort_data_class()
+results = results_class()
+plotter = plotter_class()
 
-timelimits_list = fr.read_data('timelimits')
-brugbare =[3,4,5]
+timelimits_list = fr.read_data('timelimits_new')
+brugbare =[3,4,5,6,7,20,21,22,23,26,27,28,29,51,52]
 gennemkoerselsesgang = 0
 all_datasets = {}
 for testperson_nr in brugbare:
@@ -19,3 +24,28 @@ for testperson_nr in brugbare:
 
 #Nu skulle data gerne være indlæst
 
+for testperson_key in all_datasets:
+    # bestem index, mean + std for hver fase + velocity (linReg)
+    current_dataset = all_datasets[testperson_key]
+    dict_mean_std = {}
+    dict_index = {}
+    for key in current_dataset:
+        if('tid' in key):
+            pass
+        else:
+            tidsliste_key = key + '_tid'
+            indexes = results.process_results(hr_list=current_dataset[key] , tider_list = current_dataset[tidsliste_key],testperson_nr=testperson_key, intervention=key)
+            dict_index[key] = indexes
+            list_mean_std = results.get_mean_and_std_list()
+            dict_mean_std[key] = list_mean_std
+    
+    # Plot de 4 hr kurver afhængigt af tiden med indtegnet velocity og stabiliseringstidspunkt/index
+    velocity_list_lin_reg = results.get_coefs()
+    plotter.plot_limit_HRM_pro(current_dataset, testperson_key, show_bool=False, index_list=dict_index,dict_mean_std=dict_mean_std, hastighed_lin_reg=velocity_list_lin_reg)    
+
+    # Tegn de gaussiske fordelinger med histogrammer og fordelingskurver
+    results.plot_hist_and_gaussian(dict_hr_data=current_dataset,dict_mean_std=dict_mean_std,testperson_nr = testperson_key)
+
+# gem resultaterne i en passende liste/dictionary så de senere kan gemmes i en fil. 
+res = results.Get_results_as_list()   
+fr.save_results(res, 'results.csv')

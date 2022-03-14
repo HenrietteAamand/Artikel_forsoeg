@@ -195,7 +195,7 @@ class plotter_class():
         if show_bool == True:
             plt.show()    
 
-    def plot_limit_HRM_pro(self, Dict_all_data: dict, counter: int, show_bool = True, index_list = [], list_mean_std = [], fase_intervention_list = [], hastighed_lin_reg = [], hastighed_two_points = []):
+    def plot_limit_HRM_pro(self, Dict_one_testperson: dict, testperson_nr: int, show_bool = True, index_list = [], dict_mean_std = {}, fase_intervention_list = [], hastighed_lin_reg = {}, hastighed_two_points = []):
         """ Her plottes hr data udelukkende for HRM-pro. Figurerne bruges i selve forsøget. I figuren er der:
              1) Det midlede hr signal
              2) Et stem der viser stabiliseringstidspunktet
@@ -213,82 +213,54 @@ class plotter_class():
             hastighed_two_points (list, optional): Liste med de hastigheder der er beregnet via en two point metode. Defaults er [].
         """
 
-        list_timeaxes = []
-        list_indexes_time = []
+        dict_timeaxes = {}
+        dict_indexes_time = {}
         fs = 4
-        list_avg = []
         i = 0
         N = 51
-        signal_name=""
         max_and_min_values = []
-        list_hastighed = [] 
-        tid_two_point_list = []
-        hr_two_point_list = []
-        while i < 4:
-            if(counter == 1): #Fra første testperson bruges data fra MAXREFDES103
-                signal_original = Dict_all_data[counter]['Hr_Maxrefdes103_' + str(i)]
-                signal_name="Hr_Maxrefdes103_"
-                fs = 25
-            else: #For de øvrige tespersoner bruges data fra HRM_pro
-                signal_original = Dict_all_data[counter]['Hr_Hrmpro_' + str(i)]
-                signal_name = "Hr_Hrmpro_"
-                fs = 4
-            
-            # Antal filterkoefficienter
-            N = fs*10+1
-            
-            # Finder det filtrerede signal
-            signal_avg = self.__get_filtered_signal(signal_original, N)
-            list_avg.append(signal_avg)
+        dict_hastighed = {} 
+        intervention_list = []
+        dict_avg = {}
+       
+        for key in Dict_one_testperson:
+            if('tid' in key):
+                pass
+            else:
+                # Tilføj det filtrerede signal til en liste/dictionary, med tilknyttet intervention
+                # Beregn y-værdier for den lineære regression:
+                intervention_list.append(key)
+                # filtrer signalet + lav tidsakse på -2*N længde af originalsignalet
+                fs = 4            
+                # Antal filterkoefficienter
+                N = fs*10+1
+                # Finder det filtrerede signal
+                signal_avg = self.__get_filtered_signal(Dict_one_testperson[key], N)
+                dict_avg[key] = signal_avg
 
-            dict_tid = {}
-            delta_tid_garmin = 1/fs
-            if (i > 0):    
-                # Deltatider
-                time_gmm = index_list[i-1]['gmm']*delta_tid_garmin
-                time_soren = index_list[i-1]['soren']*delta_tid_garmin
+                dict_tid = {}
+                time_key = key+'_tid'
+                time_gmm = Dict_one_testperson[time_key][index_list[key]['gmm']]
                 dict_tid['gmm'] = time_gmm
-                dict_tid['soren'] = time_soren
-            elif(i==0): # Vi beregner ikke en stabiliseringstid for baselineperioden, og derfor tilføjes bare 0
-                dict_tid['gmm'] = 0
-                dict_tid['soren'] = 0
-            list_indexes_time.append(dict_tid)
+                dict_indexes_time[key] = dict_tid
 
-            # længde af signal i tid
-            tid_signal = len(signal_original[N:len(signal_original)-N])/fs
-            tid_avg = len(signal_avg)/fs
 
-            # Laver tidsakse til de forskellige signaler så de kan plottes i samme figur
-            tidsakse_signal = np.arange(0,tid_signal, delta_tid_garmin)
-            tidsakse_avg = np.arange(0,tid_avg, delta_tid_garmin)
-
-            dict_tidsakse = {}
-            dict_tidsakse["Signal"] = tidsakse_signal
-            dict_tidsakse["Avg"] = tidsakse_avg
-            list_timeaxes.append(dict_tidsakse)
-            max_and_min_values.append(max(signal_avg))
-            max_and_min_values.append(min(signal_avg))
-            if(i>0):    
+                # Laver tidsakse til de forskellige signaler så de kan plottes i samme figur
+                dict_tidsakse = {}
+                dict_tidsakse["Signal"] = Dict_one_testperson[key+'_tid']
+                dict_tidsakse["Avg"] = Dict_one_testperson[key+'_tid'][:len(Dict_one_testperson[key+'_tid'])-N*2] #Fjerner de første 41 tider og de sidste 41 tider.
+                dict_timeaxes[key] = dict_tidsakse
+                max_and_min_values.append(max(signal_avg))
+                max_and_min_values.append(min(signal_avg))
+                
                 list_regression = []
-                a = hastighed_lin_reg[i-1]['coef']
-                b = hastighed_lin_reg[i-1]['intercept']
+                a = hastighed_lin_reg[key]['coef']
+                b = hastighed_lin_reg[key]['intercept']
                 # Laver den rette linje
-                for tid in tidsakse_avg:
+                for tid in dict_tidsakse["Avg"]:
                     list_regression.append((a*(tid)+b))
-                list_hastighed.append(list_regression)
+                dict_hastighed[key] = list_regression
 
-                # HR two point har flere måder at blive plottet. Hvis man gerne vil plotte mellem første hr og stabiliseringstidspunktet skal den udkmmenterede linje inkommenteres og linjen under indkommenteres. 
-                #hr_two_point = [signal_avg[0], signal_avg[index_list[i-1]['gmm']]]
-                hr_two_point = [list_mean_std[i-1]['mean_high'], list_mean_std[i-1]['mean_low']]
-                hr_two_point_list.append(hr_two_point)
-                tid_two_point = [0, list_indexes_time[i]['gmm']]
-                tid_two_point_list.append(tid_two_point)
-                velocity_dict = {}
-                velocity_dict['reg'] = a
-                velocity_dict['point'] = hastighed_two_points[i-1]
-                velocity_dict['diff'] = a-hastighed_two_points[i-1]
-                self.velocities.append(velocity_dict)
-            i += 1
 
         # Ændrer skriftstørrelsen, så plotsne bliver mere læsbare i artiklen
         SMALL_SIZE = 12
@@ -305,43 +277,37 @@ class plotter_class():
         plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
         fig, axs = plt.subplots(2,2)
-        fig.suptitle("Hr, testperson " + str(self.testperson) + " after finishing the stresstest", fontweight='bold')
+        fig.suptitle("Hr, testperson " + str(testperson_nr) + " after finishing the stresstest", fontweight='bold')
         list_koordinates = [(0,0), (0,1), (1,0), (1,1)]
 
         y_lim_low = min(max_and_min_values)-5
         y_lim_high = max(max_and_min_values)+5
         for n in range(len(list_koordinates)):
             #axs[list_koordinates[n]].plot(list_timeaxes[n]["Signal"],  Dict_all_data[counter][signal_name + str(n)][N:len(Dict_all_data[counter][signal_name + str(n)])-N], label = 'Raw Hr data', color = 'g', linewidth = 0.8)
-            axs[list_koordinates[n]].plot(list_timeaxes[n]["Avg"],  list_avg[n], label = 'Averaged Hr data', color = 'g', linewidth = 2.5)
-           
-            if(list_indexes_time[n]['soren']) > 0:
-                markerline_mean_soren, stemlines_mean_soren, baseline = axs[list_koordinates[n]].stem(list_indexes_time[n]['soren'],max(Dict_all_data[counter][signal_name + str(n)]),'g', markerfmt='o', linewidth = 1.6 ,label = 'Time = ' + str(list_indexes_time[n]) + " sec", basefmt=" ")
-                plt.setp(markerline_mean_soren, 'color', plt.getp( stemlines_mean_soren,'color'))
-            if(n > 0): # alle de ting der skal ske for alle andre end baseline
-                mean = list_mean_std[n-1]["mean_low"]
-                axs[list_koordinates[n]].axhline(y=mean, color='b', linestyle='-', label = 'Mean of low cluster = ' + str(round(mean,2)), linewidth = 1.6)
-                axs[list_koordinates[n]].axhline(y=mean + list_mean_std[n-1]["std_low"], color='k', linestyle='--', linewidth = 1, label = 'Mean of low cluster +/- 1*std ')
-                axs[list_koordinates[n]].axhline(y=mean - list_mean_std[n-1]["std_low"], color='k', linestyle='--', linewidth = 1)
-                axs[list_koordinates[n]].plot(list_timeaxes[n]["Avg"], list_hastighed[n-1], color = 'darkgoldenrod', label = 'Stabelization velocity = ' + str(hastighed_lin_reg[n-1]['coef']) + " bpm/s", linewidth = 2)   
-                #axs[list_koordinates[n]].plot(tid_two_point_list[n-1], hr_two_point_list[n-1], color = 'purple', label = 'Stabelization velocity = ' + str(hastighed_two_points[n-1]) + " bpm/s")   
-
-                markerline_mean, stemlines_mean, baseline = axs[list_koordinates[n]].stem(list_indexes_time[n]['gmm'],y_lim_high-10,'b', markerfmt='o', label = 'Stabilization time = ' + str(list_indexes_time[n]['gmm']) + " sec", basefmt=" ")
-                plt.setp(markerline_mean, 'color', plt.getp( stemlines_mean,'color'))
+            axs[list_koordinates[n]].plot(dict_timeaxes[intervention_list[n]]["Avg"],  dict_avg[intervention_list[n]], label = 'Averaged Hr data', color = 'g', linewidth = 2.5)
+            mean = dict_mean_std[intervention_list[n]][0]["mean_low"]
+            axs[list_koordinates[n]].axhline(y=mean, color='b', linestyle='-', label = 'Mean of low cluster = ' + str(round(mean,2)), linewidth = 1.6)
+            axs[list_koordinates[n]].axhline(y=mean + dict_mean_std[intervention_list[n]][0]["std_low"], color='k', linestyle='--', linewidth = 1, label = 'Mean of low cluster +/- 1*std ')
+            axs[list_koordinates[n]].axhline(y=mean - dict_mean_std[intervention_list[n]][0]["std_low"], color='k', linestyle='--', linewidth = 1)
+            axs[list_koordinates[n]].plot(dict_timeaxes[intervention_list[n]]["Avg"], dict_hastighed[intervention_list[n]], color = 'darkgoldenrod', label = 'Stabelization velocity = ' + str(hastighed_lin_reg[intervention_list[n]]['coef']) + ' bpm/s', linewidth = 2)   
+            markerline_mean, stemlines_mean, baseline = axs[list_koordinates[n]].stem(dict_indexes_time[intervention_list[n]]['gmm'],y_lim_high-10,'b', markerfmt='o', label = 'Stabilization time = ' + str(dict_indexes_time[intervention_list[n]]['gmm']) + " sec", basefmt=" ")
+    
+            plt.setp(markerline_mean, 'color', plt.getp( stemlines_mean,'color'))
             axs[list_koordinates[n]].set_ylim([y_lim_low, y_lim_high])
             axs[list_koordinates[n]].set_xlabel('Time [seconds]')
             axs[list_koordinates[n]].set_ylabel('HR [bpm]')
             axs[list_koordinates[n]].legend(loc = 'upper right', facecolor="white")
             axs[list_koordinates[n]].set_facecolor('whitesmoke')
             axs[list_koordinates[n]].grid(color = 'lightgrey')
-            axs[list_koordinates[n]].set_title('Phase ' + str(n) + ': ' + str(fase_intervention_list[self.fase_variable]['intervention']) + ' phase', fontsize = MEDIUM_BIG_SIZE, fontweight='bold')
+            axs[list_koordinates[n]].set_title(intervention_list[n], fontsize = MEDIUM_BIG_SIZE, fontweight='bold')
             self.fase_variable += 1
-
 
         fig.set_size_inches(20,10)
         fig.set_tight_layout('tight')
         fig.subplots_adjust(left=0.05, bottom=0.08, right=0.97, top=0.92, wspace=None, hspace=None)
-        path = 'C:/Users/hah/Documents/VISUAL_STUDIO_CODE/Forsoeg_sammenligningsscript/Figurer/HR/gmm/'
-        title = 'Testperson ' + str(self.testperson)
+        #path = 'C:/Users/hah/Documents/VISUAL_STUDIO_CODE/Forsoeg_sammenligningsscript/Figurer/HR/gmm/'
+        path ='C:/Users/Bruger/Documents/GitHub/Praktik/Artikel_forsoeg/Figurer/heart_rate/'
+        title = 'Testperson ' + str(testperson_nr)
         fig.savefig(path + " " + title, dpi = 500)
         self.testperson+= 1
         if show_bool == True:

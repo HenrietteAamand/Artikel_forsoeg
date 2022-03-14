@@ -10,17 +10,18 @@ from sklearn.linear_model import LinearRegression
 
 from stabelisation import *
 class results_class():
-    def __init__(self, fase_intervention_testperson_sammenhaeng) -> None:
-        self.intervention = fase_intervention_testperson_sammenhaeng
+    def __init__(self) -> None:
+        self.coef_dict = {}     # Gemmer hældningskoefficienten sat skæringen med y-aksen
         self.list_dict_results = []
         self.stabel = stabelisation_class()
         self.id_2_dot_0 = 1
         self.testperson = 1
         self.list_velocity = []
+        self.old_testperson_nr = 3
         
     
 
-    def process_results(self, data_list: list, data_tider_list: list, testperson_nr: int):
+    def process_results(self, hr_list: list, tider_list: list, testperson_nr: int, intervention: str):
         """Metoden styrer hvordan hr processeres, så der findes en stabiliseringshastighed og niveau. 
 
         Args:
@@ -32,23 +33,22 @@ class results_class():
         """
         i = 1
         fs = 0
-        list_hr_avg = []
+        #list_hr_avg = []
         self.list_mean_std = [] # Bruges til at tegne histogrammet med fordelingerne indtegnet
-        index_list = []         # Gemmer de indexer, der er fundet som stabiliseringstidspunktet. 
-        self.coef_list = []     # Gemmer hældningskoefficienten sat skæringen med y-aksen
-        self.list_velocity = []
+        #index_list = []        # Gemmer de indexer, der er fundet som stabiliseringstidspunktet. 
+        #self.list_velocity = []
         fs = 4
 
         # Bestemmer ved hvilket index signalet er stabilt med gmm-metoden
         N = fs*10
-        signal_original = data_list
+        signal_original = hr_list
         hr_avg = self.__get_filtered_signal(signal_original, N)
-        list_hr_avg.append(hr_avg)
+        #list_hr_avg.append(hr_avg)
         index_gmm = self.stabel.gmm(hr_avg)
         dict_index = {}
         dict_index['gmm'] = index_gmm
-        index_list.append(dict_index)
-        delta_tid = 1/fs
+        #index_list.append(dict_index)
+        
 
         # Gemmer resultaterne af gmm()
         std_low, std_high = self.stabel.get_stds()
@@ -62,21 +62,18 @@ class results_class():
         self.list_mean_std.append(dict_mean_std)
         
         # gemmer de resultater der skal laves statistik af, så de senere kan gemmes i en fil
-        tid1 = data_tider_list[index_gmm]
-        maximum_hr = max(hr_avg)
-        hastighed = self.linear_regression(hr_avg,fs, index_gmm)[0][0]     # Der er to metoder til at finde hastigheden, her bruges lineær regression, og det er den vi har brugt til at bestemme hastigheden i pilotforsøget
+        tid1 = tider_list[index_gmm]
+        maximum_hr = round(max(hr_avg),2)
+        hastighed = round(self.linear_regression(hr_avg, tider_list, index_gmm, intervention)[0][0],4)     # Der er to metoder til at finde hastigheden, her bruges lineær regression, og det er den vi har brugt til at bestemme hastigheden i pilotforsøget
         # hastighed = (mean_low-maximum_hr)/(tid1)
         stabiliseringsniveau, denhoje = self.stabel.get_means()
         
         # Jeg vil gerne gemme hvilken intervention der hører til dette datasæt. Derfor skal jeg ind i interventionslisten og finde den intervention, hvor fasenumrene og testpersonnummmeret matcher
-        n=0
-        while(n < 3):
-            index2 = testperson_nr*3+n-3 # Jeg trækker 3 fra, fordi jeg hver gang ganger med 3, og dermed lander 1 person for langt fremme
-            fasenummer = self.intervention[index2]['fase']
-            if(fasenummer == str(i)):
-                intervention = self.intervention[index2]['intervention']
-                break
-            n+=1
+        if self.old_testperson_nr == testperson_nr:
+            pass
+        else:
+            self.id_2_dot_0 += 1
+            self.old_testperson_nr = testperson_nr
         dict_results = {}
         dict_results['ID 2.0'] = self.id_2_dot_0
         dict_results['ID 1.0'] = testperson_nr
@@ -89,9 +86,8 @@ class results_class():
         self.list_dict_results.append(dict_results)
         i+=1
 
-        self.id_2_dot_0 += 1
-        self.plot_hist_and_gaussian(list_hr_data=list_hr_avg, list_mean_std = self.list_mean_std, counter=testperson_nr)
-        return index_list
+        #self.plot_hist_and_gaussian(list_hr_data=list_hr_avg, list_mean_std = self.list_mean_std, counter=testperson_nr)
+        return dict_index
         
 
     def __get_filtered_signal(self, raw_signal, average_value):        
@@ -117,29 +113,24 @@ class results_class():
         Returns:
             (list): liste med resultater for stabiliseringshastighed, niveau, tid mm, men nu i korrigeret rækkefølge. 
         """
-        new_returnlist = []
-        raekkefoelge = ['Silent', 'Static', 'Dynamic']
-        i = 0
-        while( i < len(self.list_dict_results)):
-            for n in range(3):
-                for j in range(3):
-                    condition = self.list_dict_results[i+j]['Condition'] 
-                    raekkefoelge_index = raekkefoelge[n]
-                    if(condition == raekkefoelge_index):
-                        new_returnlist.append(self.list_dict_results[i+j])
-                        break
+        # new_returnlist = []
+        # raekkefoelge = ['Reference', 'Statist', 'Dynamisk_2', 'Dynamisk_10']
+        # i = 0
+        # while( i < len(self.list_dict_results)):
+        #     for n in range(len(raekkefoelge)):
+        #         for j in range(len(raekkefoelge)):
+        #             condition = self.list_dict_results[i+j]['Condition'] 
+        #             raekkefoelge_index = raekkefoelge[n]
+        #             if(condition == raekkefoelge_index):
+        #                 new_returnlist.append(self.list_dict_results[i+j])
+        #                 break
 
-            i +=3
+        #     i +=3
 
+        # return new_returnlist
+        return self.list_dict_results
 
-        return new_returnlist
-
-    def Empty_result_dict(self):
-        """Tømmer resultatlisten. Skulle bruges på et tidligere tidspunkt, hvor databehandlingen blev lavet flere gange uden programmet sluttede. Bruges ikke mere
-        """
-        self.list_dict_results.clear()
-
-    def plot_hist_and_gaussian(self, list_hr_data, list_mean_std, counter = 0):
+    def plot_hist_and_gaussian(self, dict_hr_data, dict_mean_std, testperson_nr = 0):
         """Plotter et histogram med fordelingerne der er fundet med gmm metoden
 
         Args:
@@ -159,24 +150,24 @@ class results_class():
         plt.rc('legend', fontsize=MEDIUM_SIZE)   # legend fontsize
         plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title        
         fig, axs = plt.subplots(2,2)
-        fig.suptitle("Hr, testperson " + str(self.testperson) + " after finishing the stresstest", fontweight = 'bold') 
-        list_koordinates = [(0,1), (1,0), (1,1), (0,0)]
+        fig.suptitle("Hr, testperson " + str(testperson_nr) + " after finishing the stresstest", fontweight = 'bold') 
+        list_koordinates = [(0,0),(0,1), (1,0), (1,1)]
 
-
-        for n in range(len(list_koordinates)-1):
-            bins = int(round(max(list_hr_data[n])-min(list_hr_data[n])))
-            std_low = round(list_mean_std[n]["std_low"],2)
-            std_high = round(list_mean_std[n]["std_high"],2)
-            mean_low = round(list_mean_std[n]["mean_low"],2)
-            mean_high = round(list_mean_std[n]["mean_high"],2)
+        intervention = ['Reference', 'Statisk', 'Dynamisk_2', 'Dynamisk_10']
+        for n in range(len(list_koordinates)):
+            bins = int(round(max(dict_hr_data[intervention[n]])-min(dict_hr_data[intervention[n]])))
+            std_low = round(dict_mean_std[intervention[n]][0]["std_low"],2)
+            std_high = round(dict_mean_std[intervention[n]][0]["std_high"],2)
+            mean_low = round(dict_mean_std[intervention[n]][0]["mean_low"],2)
+            mean_high = round(dict_mean_std[intervention[n]][0]["mean_high"],2)
             x_low = np.linspace(mean_low - 3* std_low, mean_low + 3*std_low, 100)
             x_high = np.linspace(mean_high - 3* std_high, mean_high + 3*std_high, 100)
             axs[list_koordinates[n]].plot(x_low, scipy.stats.norm.pdf(x_low, mean_low, std_low), label = 'Mean = ' + str(mean_low) + ' std = ' + str(std_low))
             axs[list_koordinates[n]].plot(x_high, scipy.stats.norm.pdf(x_high, mean_high, std_high), label = 'Mean = ' + str(mean_high) + ' std = ' + str(std_high))
-            axs[list_koordinates[n]].hist(list_hr_data[n], bins, facecolor = 'green', alpha= 0.5, density=True)
+            axs[list_koordinates[n]].hist(dict_hr_data[intervention[n]], bins, facecolor = 'green', alpha= 0.5, density=True)
             axs[list_koordinates[n]].set_xlabel('HR [Bpm]')
             axs[list_koordinates[n]].set_ylabel('Density of heart rate')
-            axs[list_koordinates[n]].set_title('Phase ' + str(n+1), fontsize = MEDIUM_SIZE, fontweight = 'bold')
+            axs[list_koordinates[n]].set_title('Intervention ' + intervention[n], fontsize = MEDIUM_SIZE, fontweight = 'bold')
             axs[list_koordinates[n]].legend(loc = 'upper right', facecolor="white")
             axs[list_koordinates[n]].set_facecolor('whitesmoke')
             axs[list_koordinates[n]].grid(color = 'lightgrey')
@@ -188,8 +179,9 @@ class results_class():
         fig.set_size_inches(20,10)
         fig.set_tight_layout('tight')
         fig.subplots_adjust(left=0.05, bottom=0.08, right=0.97, top=0.92, wspace=None, hspace=None)
-        path = 'C:/Users/hah/Documents/VISUAL_STUDIO_CODE/Forsoeg_sammenligningsscript/Figurer/HR/Histogrammer/'
-        title = 'Gaussian distributions, Testperson ' + str(self.testperson)
+        #path = 'C:/Users/hah/Documents/VISUAL_STUDIO_CODE/Forsoeg_sammenligningsscript/Figurer/Histogrammer/'
+        path ='C:/Users/Bruger/Documents/GitHub/Praktik/Artikel_forsoeg/Figurer/Histogrammer/'
+        title = 'Gaussian distributions, Testperson ' + str(testperson_nr)
         fig.savefig(path + " " + title) #, dpi = 200)
         self.testperson+=1
 
@@ -203,7 +195,7 @@ class results_class():
         # mean_low = round(self.list_mean_std[n]["mean_low"],2)
         return self.list_mean_std
 
-    def linear_regression(self, signal_avg = [], signal_tid = [], index = 0):
+    def linear_regression(self, signal_avg = [], signal_tid = [], index = 0, intervention = ''):
         """Udfører lineær regression på den første del af signalet fra t = 0 til t = stabiliseringstid
 
         Args:
@@ -215,7 +207,7 @@ class results_class():
             returnerer et arraylignende objekt med hældningen.
         """
         y = signal_avg[:index] # Vil kun lave lineær regression på data indtil det index hvor vi har fundet stabiliseringstiden
-        X = signal_tid.reshape(-1,1)
+        X = np.array(signal_tid[:index]).reshape(-1,1)
         y = y.reshape(-1,1)
         reg = LinearRegression(copy_X=True).fit(X, y)
         reg.score(X, y)
@@ -223,7 +215,7 @@ class results_class():
         dict_coefficients = {}
         dict_coefficients['coef'] = round(coef[0][0],3)
         dict_coefficients['intercept'] = round(reg.intercept_[0],3)
-        self.coef_list.append(dict_coefficients)
+        self.coef_dict[intervention] = dict_coefficients
         return coef
 
     def mean_high_data(self, hr_avg : list, index : int):
@@ -238,20 +230,7 @@ class results_class():
         """
         mean_high = sum(hr_avg[0:index-1])/index
         return mean_high
-    
-    def two_point_velocity(self, hr_begin : float, hr_mean:float, stabilization_time : float):
-        """Beregner hældningen af den rette linje der går igennem de to punkter: 1) [0, hr_begin] 2) [stibilization_time, hr_mean]. Denne metode beregner altså hastigheden ved brug af two point velocity
-
-        Args:
-            hr_begin (float): den hr-værdi der skal bruges i punktet [0, hr_begin]. Det kan være den første hr,værdi, middelværdien af den første del af signalet eller den høje middelværdi fra GMM metoden
-            hr_mean (float): stabiliseringsniveauet
-            stabilization_time (float): Den tid det tog, før hr var stabil efter endt strestest.
-
-        Returns:
-            (float) : den beregnede hældning, svarende til hastigheden
-        """
-        self.list_velocity.append(round((hr_mean-hr_begin)/stabilization_time,2))
-        return self.list_velocity[len(self.list_velocity)-1]
+   
 
     def get_coefs(self):
         """Der returneres en liste med dictionary, der indeholder hældningen og skæringen for den libeære regression. Listen har længden 3 svarende til hælding og skæring for fase 1-3
@@ -259,7 +238,5 @@ class results_class():
         Returns:
             (list): Returnerer den ovenfr beskrevne liste. 
         """
-        return self.coef_list
+        return self.coef_dict
 
-    def get_velocity_two_point(self):
-        return self.list_velocity

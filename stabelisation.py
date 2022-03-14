@@ -38,7 +38,7 @@ class stabelisation_class():
         return index
 
     def get_means(self):
-        return self.mean_low, self.mean_high
+        return round(self.mean_low,2), round(self.mean_high,2)
 
     def get_stds(self):
         return self.std_low, self.std_high

@@ -131,7 +131,7 @@ for n in range(len(brugbare_datasaet)):
     list_mean_std = resultater.get_mean_and_std_list()
     velocity_list_two_point = resultater.get_velocity_two_point()
     velocity_list_lin_reg = resultater.get_coefs()
-    plotter.plot_limit_HRM_pro(Dict_with_obs_file, counter = brugbare_datasaet[n], index_list= indexlist, list_mean_std=list_mean_std, hastighed_lin_reg=velocity_list_lin_reg, fase_intervention_list=fase_intervention_brugbare, hastighed_two_points=velocity_list_two_point, show_bool=False)
+    plotter.plot_limit_HRM_pro(Dict_with_obs_file, counter = brugbare_datasaet[n], index_list= indexlist, dict_mean_std=list_mean_std, hastighed_lin_reg=velocity_list_lin_reg, fase_intervention_list=fase_intervention_brugbare, hastighed_two_points=velocity_list_two_point, show_bool=False)
     #plotter.plot_rr_subplot(Dict_all_data=Dict_with_obs_file, Dict_accel = Dict_with_accel_file, counter=brugbare_datasaet[n], show_bool=False, tidsforskydning = tidsforskydning)
     plotter.plot_hr_subplot(Dict_all_data=Dict_with_obs_file, counter=brugbare_datasaet[n], show_bool= False)
     print(str(n+1) + " new figure(s) created")

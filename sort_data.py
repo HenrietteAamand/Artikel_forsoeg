@@ -24,7 +24,7 @@ class sort_data_class:
                     # 0: timelimit, 2:hr
                     if(float(datapoint[0]) >= begin and float(datapoint[0]) <= end):
                         hr.append(int(datapoint[2]))
-                        tider.append(float(datapoint[0])-begin)
+                        tider.append((float(datapoint[0])-begin)/1000)
                     elif(float(datapoint[0]) > end):
                         break
             testperson_dict[phase] = hr
