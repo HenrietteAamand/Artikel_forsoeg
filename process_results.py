@@ -17,7 +17,7 @@ class results_class():
         self.id_2_dot_0 = 1
         self.testperson = 1
         self.list_velocity = []
-        self.old_testperson_nr = 3
+        self.old_testperson_nr = 1
         
     
 

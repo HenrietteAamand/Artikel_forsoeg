@@ -312,6 +312,7 @@ class plotter_class():
         self.testperson+= 1
         if show_bool == True:
             plt.show()    
+        plt.close('all')
 
     def plot_HRV(self, dict_hrv_data: dict, dict_usefull_data = dict, show_bool = True):
         
