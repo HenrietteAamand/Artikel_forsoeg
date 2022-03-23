@@ -264,12 +264,12 @@ class plotter_class():
 
         # Ændrer skriftstørrelsen, så plotsne bliver mere læsbare i artiklen
         SMALL_SIZE = 12
-        MEDIUM_SIZE = 12 #16
-        MEDIUM_BIG_SIZE = 14 #20
-        BIGGER_SIZE = 16 #22
+        MEDIUM_SIZE = 16
+        MEDIUM_BIG_SIZE = 20
+        BIGGER_SIZE = 22
 
         plt.rc('font', size=MEDIUM_SIZE)         # controls default text sizes
-        plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+        plt.rc('axes', titlesize=MEDIUM_BIG_SIZE)     # fontsize of the axes title
         plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
         plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
         plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
@@ -277,7 +277,7 @@ class plotter_class():
         plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
         fig, axs = plt.subplots(2,2)
-        fig.suptitle("Hr, testperson " + str(testperson_nr) + " after finishing the stresstest", fontweight='bold')
+        #fig.suptitle("Hr, testperson " + str(testperson_nr) + " after finishing the stresstest", fontweight='bold')
         list_koordinates = [(0,0), (0,1), (1,0), (1,1)]
 
         y_lim_low = min(max_and_min_values)-5
@@ -289,7 +289,7 @@ class plotter_class():
             axs[list_koordinates[n]].axhline(y=mean, color='b', linestyle='-', label = 'Mean of low cluster = ' + str(round(mean,2)), linewidth = 1.6)
             axs[list_koordinates[n]].axhline(y=mean + dict_mean_std[intervention_list[n]][0]["std_low"], color='k', linestyle='--', linewidth = 1, label = 'Mean of low cluster +/- 1*std ')
             axs[list_koordinates[n]].axhline(y=mean - dict_mean_std[intervention_list[n]][0]["std_low"], color='k', linestyle='--', linewidth = 1)
-            axs[list_koordinates[n]].plot(dict_timeaxes[intervention_list[n]]["Avg"], dict_hastighed[intervention_list[n]], color = 'darkgoldenrod', label = 'Stabelization velocity = ' + str(hastighed_lin_reg[intervention_list[n]]['coef']) + ' bpm/s', linewidth = 2)   
+            axs[list_koordinates[n]].plot(dict_timeaxes[intervention_list[n]]["Avg"], dict_hastighed[intervention_list[n]], color = 'darkgoldenrod', label = 'Stabilization velocity = ' + str(hastighed_lin_reg[intervention_list[n]]['coef']) + ' bpm/s', linewidth = 2)   
             markerline_mean, stemlines_mean, baseline = axs[list_koordinates[n]].stem(dict_indexes_time[intervention_list[n]]['gmm'],y_lim_high-10,'b', markerfmt='o', label = 'Stabilization time = ' + str(dict_indexes_time[intervention_list[n]]['gmm']) + " sec", basefmt=" ")
     
             plt.setp(markerline_mean, 'color', plt.getp( stemlines_mean,'color'))
